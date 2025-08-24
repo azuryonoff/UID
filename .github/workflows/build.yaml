@@ -2,9 +2,9 @@ name: "build"
 
 on:
   push:
-    branches: ["**"]
-    tags-ignore: ["**"]
-  pull_request:
+    branches: ["**"]   # Compile sur toutes les branches
+    tags-ignore: ["**"] # Ignore les tags
+  pull_request:         # Compile aussi les PR
 
 concurrency:
   cancel-in-progress: true
@@ -15,23 +15,33 @@ env:
 
 jobs:
   build:
-    # Only run on PRs if the source branch is on someone else's repo
+    # Empêche l'exécution sur les PR venant du même repo
     if: "${{ github.event_name != 'pull_request' || github.repository != github.event.pull_request.head.repo.full_name }}"
     strategy:
       matrix:
-        os: ["ubuntu-latest", "windows-latest"]
+        os: ["ubuntu-latest", "windows-latest"]  # Compile sur Linux + Windows
     runs-on: "${{ matrix.os }}"
     steps:
-      - name: "checkout repository"
-        uses: "actions/checkout@v4"
-      - name: "validate gradle wrapper"
-        uses: "gradle/actions/wrapper-validation@v3"
-      - name: "setup java ${{ env.RUNTIME_VERSION }}"
-        uses: "actions/setup-java@v4"
+      - name: "Checkout repository"
+        uses: actions/checkout@v4
+
+      - name: "Validate Gradle wrapper"
+        uses: gradle/actions/wrapper-validation@v3
+
+      - name: "Setup Java ${{ env.RUNTIME_VERSION }}"
+        uses: actions/setup-java@v4
         with:
           distribution: "zulu"
           java-version: "${{ env.RUNTIME_VERSION }}"
-      - name: "setup gradle"
-        uses: "gradle/actions/setup-gradle@v3"
-      - name: "run gradle build"
-        run: "./gradlew build"
+
+      - name: "Setup Gradle"
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: "Run Gradle build"
+        run: ./gradlew build
+
+      - name: "Upload plugin jar"
+        uses: actions/upload-artifact@v3
+        with:
+          name: UID-plugin-${{ matrix.os }}
+          path: build/libs/*.jar
