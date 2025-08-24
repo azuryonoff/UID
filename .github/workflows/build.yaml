@@ -1,10 +1,10 @@
-name: "build"
+name: "Build Plugin"
 
 on:
   push:
-    branches: ["**"]   # Compile sur toutes les branches
-    tags-ignore: ["**"] # Ignore les tags
-  pull_request:         # Compile aussi les PR
+    branches: ["**"]
+    tags-ignore: ["**"]
+  pull_request:
 
 concurrency:
   cancel-in-progress: true
@@ -15,12 +15,7 @@ env:
 
 jobs:
   build:
-    # Empêche l'exécution sur les PR venant du même repo
-    if: "${{ github.event_name != 'pull_request' || github.repository != github.event.pull_request.head.repo.full_name }}"
-    strategy:
-      matrix:
-        os: ["ubuntu-latest", "windows-latest"]  # Compile sur Linux + Windows
-    runs-on: "${{ matrix.os }}"
+    runs-on: ubuntu-latest
     steps:
       - name: "Checkout repository"
         uses: actions/checkout@v4
@@ -38,10 +33,16 @@ jobs:
         uses: gradle/actions/setup-gradle@v3
 
       - name: "Run Gradle build"
-        run: ./gradlew build
+        run: ./gradlew clean build
 
       - name: "Upload plugin jar"
         uses: actions/upload-artifact@v4
         with:
-          name: UID-plugin-${{ matrix.os }}
+          name: UID-Plugin
           path: build/libs/*.jar
+
+      - name: "Upload full project (with build)"
+        uses: actions/upload-artifact@v4
+        with:
+          name: UID-Full-Project
+          path: ${{ github.workspace }}/**
